@@ -43,11 +43,10 @@ def parse_documents(cran_file=CRAN_COLL):
                 body_kwds[running_idx]+= [t for t in line.split()]  
             else:
                 body_kwds[running_idx]= [t for t in line.split()]
-    print (body_kwds, title_kwds)
     return (body_kwds, title_kwds)
 
 
-def pre_process(words=["aLoHa,","and","bAg","yEah,weF","initials","initialize"]):
+def pre_process(words):
     """Preprocess the list of words provided.
     Arguments:
         words: (list of str) A list of words or terms
@@ -153,8 +152,15 @@ def main():
     try:
         file = open(INDEX_FILE)
     except IOError as e:
-        parse_documents()
-    pre_process()
+        doc_result = parse_documents()
+
+    for key, value in doc_result[0].items():
+        doc_result[0][key]=pre_process(value)
+
+    for key, value in doc_result[1].items():
+        doc_result[1][key]=pre_process(value)
+
+    print doc_result
     # Get and evaluate user queries from stdin. Terms on each line should be
     # ANDed, while results between lines should be ORed.
     # The output should be a space-separated list of document IDs. In the case
