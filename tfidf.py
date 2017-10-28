@@ -79,15 +79,20 @@ def create_inv_index(bodies, titles):
         titles: A dictionary of the form {doc_id: [terms]} for the terms found
         in the title (.T) of a document
     Return:
-        index: a dictionary {docId: [df, postings]}, where postings is a
+        index: a dictionary {term: [df, postings]}, where postings is a
         dictionary {docId: tf}.
         E.g. {'word': [3, {4: 2, 7: 1, 9: 3}]}
                ^       ^   ^        ^
                term    df  docid    tf
     """
     # Create a joint dictionary with pre-processed terms
-
-
+    index = dict()
+    terms = set()
+    df=0;
+    for key, value in bodies.items():
+        terms.update(value)
+        terms.update(titles[key])
+    print len(terms)
 def load_inv_index(filename=INDEX_FILE):
     """Load an inverted index from the disk. The index is assummed to be stored
     in a text file with one line per keyword. Each line is expected to be
@@ -160,7 +165,7 @@ def main():
     for key, value in doc_result[1].items():
         doc_result[1][key]=pre_process(value)
 
-    print doc_result
+    create_inv_index(doc_result[0], doc_result[1])
     # Get and evaluate user queries from stdin. Terms on each line should be
     # ANDed, while results between lines should be ORed.
     # The output should be a space-separated list of document IDs. In the case
