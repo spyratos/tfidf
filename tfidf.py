@@ -138,14 +138,19 @@ def eval_conj(inv_index, terms):
         substituting it with None
     """
     # Get the posting "lists" for each of the ANDed terms:
+    i = 0
     for term in terms:
-        inv_index[term][1].keys()
+        if i==0:
+            list_temp = inv_index[term][1].keys()
+            i=1
+        else:
+            list_temp= filter(lambda itm:itm in inv_index[term][1].keys(),list_temp)
     # Basic AND - find the documents all terms appear in, setting scores to
     # None (set scores to tf.idf for ranked retrieval):
-
+    print list_temp   
 
 def eval_disj(conj_results):
-    """Evaluate the conjunction results provided, essentially ORing the
+    """Evaluate the disjunction results provided, essentially ORing the
     document IDs they contain. In other words the resulting list will have to
     contain all unique document IDs found in the partial result lists.
     Arguments:
@@ -182,7 +187,7 @@ def main():
     for line in sys.stdin:
         words = [t for t in line.split()]
         query = pre_process(words)   
-        print query
+        eval_conj(inv_index, query)
     # Get and evaluate user queries from stdin. Terms on each line should be
     # ANDed, while results between lines should be ORed.
     # The output should be a space-separated list of document IDs. In the case
