@@ -2,6 +2,8 @@
 import sys
 from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
+#gia tin apothikefsi tou arxeiou
+import cPickle as pickle
 
 CRAN_COLL = '/home/mscuser/Datasets/cran/cran.all.1400'
 INDEX_FILE = 'cran.ind'
@@ -86,13 +88,22 @@ def create_inv_index(bodies, titles):
                term    df  docid    tf
     """
     # Create a joint dictionary with pre-processed terms
-    index = dict()
-    terms = set()
-    df=0;
-    for key, value in bodies.items():
-        terms.update(value)
-        terms.update(titles[key])
-    print len(terms)
+    index = {}
+    prevkey=0
+    for key in titles.keys():
+        titles[key].extend(bodies[key])
+        for term in titles[key]:
+            if term in index:
+                if key in index[term][1]:
+                    index[term][1][key]+=1
+                else:
+                    index[term][1][key]=1  
+            else:            
+                index[term]=[1,{key:1}]
+            index[term][0]=len(index[term][1].keys())
+    return index
+
+
 def load_inv_index(filename=INDEX_FILE):
     """Load an inverted index from the disk. The index is assummed to be stored
     in a text file with one line per keyword. Each line is expected to be
@@ -103,7 +114,8 @@ def load_inv_index(filename=INDEX_FILE):
     Return:
         a dictionary containing all keyworks and their posting dictionaries
     """
-
+    fp=open(INDEX_FILE)
+    return pickle.load(fp)
 
 def write_inv_index(inv_index, outfile=INDEX_FILE):
     """Write the given inverted index in a file.
@@ -111,7 +123,8 @@ def write_inv_index(inv_index, outfile=INDEX_FILE):
         inv_index: an inverted index of the form {'term': [df, {doc_id: tf}]}
         outfile: (str) the path to the file to be created
     """
-
+    fp=open(INDEX_FILE,'w')
+    fp.write(pickle.dumps(inv_index))
 
 def eval_conj(inv_index, terms):
     """Evaluate the conjunction given in list of terms. In other words, the
@@ -125,7 +138,8 @@ def eval_conj(inv_index, terms):
         substituting it with None
     """
     # Get the posting "lists" for each of the ANDed terms:
-    
+    for term in terms:
+        inv_index[term][1].keys()
     # Basic AND - find the documents all terms appear in, setting scores to
     # None (set scores to tf.idf for ranked retrieval):
 
@@ -155,17 +169,20 @@ def main():
     # If an index file exists load it; otherwise create a new inverted index
     # and write it into a file (you can use the variable INDEX_FILE):
     try:
-        file = open(INDEX_FILE)
+        inv_index = load_inv_index()
     except IOError as e:
         doc_result = parse_documents()
-
-    for key, value in doc_result[0].items():
-        doc_result[0][key]=pre_process(value)
-
-    for key, value in doc_result[1].items():
-        doc_result[1][key]=pre_process(value)
-
-    create_inv_index(doc_result[0], doc_result[1])
+        for key, value in doc_result[0].items():
+            doc_result[0][key]=pre_process(value)
+        for key, value in doc_result[1].items():
+            doc_result[1][key]=pre_process(value)
+        inv_index=create_inv_index(doc_result[0], doc_result[1])
+        write_inv_index(inv_index)
+    
+    for line in sys.stdin:
+        words = [t for t in line.split()]
+        query = pre_process(words)   
+        print query
     # Get and evaluate user queries from stdin. Terms on each line should be
     # ANDed, while results between lines should be ORed.
     # The output should be a space-separated list of document IDs. In the case
