@@ -139,17 +139,27 @@ def eval_conj(inv_index, terms):
     """
     # Get the posting "lists" for each of the ANDed terms:
     i = 0
+    list_temp = []
+    result = set()
     for term in terms:
-        if i==0:
-            list_temp = inv_index[term][1].keys()
-            i=1
+        if term in inv_index.keys():
+            if i==0:
+                list_temp = inv_index[term][1].keys()
+                i=1
+            else:
+                list_temp= filter(lambda itm:itm in inv_index[term][1].keys(),list_temp)
         else:
-            list_temp= filter(lambda itm:itm in inv_index[term][1].keys(),list_temp)
+            list_temp =[]
+            break
+    if list_temp:
+        for key in list_temp:
+            temp=(key,None)
+            result.add(temp)
     # Basic AND - find the documents all terms appear in, setting scores to
     # None (set scores to tf.idf for ranked retrieval):
-    print list_temp   
+    return result   
 
-def eval_disj(conj_results):
+def eval_disj(conj_results,previous_results):
     """Evaluate the disjunction results provided, essentially ORing the
     document IDs they contain. In other words the resulting list will have to
     contain all unique document IDs found in the partial result lists.
@@ -162,7 +172,7 @@ def eval_disj(conj_results):
         it with None
     """
     # Basic boolean - no scores, max(tf.idf) for ranked retrieval:
-
+    return conj_results|previous_results
 
 def main():
     """Load or create an inverted index. Parse user queries from stdin
@@ -184,10 +194,15 @@ def main():
         inv_index=create_inv_index(doc_result[0], doc_result[1])
         write_inv_index(inv_index)
     
+    conj_list = set()
+    answer = set()
     for line in sys.stdin:
         words = [t for t in line.split()]
         query = pre_process(words)   
-        eval_conj(inv_index, query)
+        conj_list = eval_conj(inv_index, query)
+        answer = eval_disj(conj_list,answer)
+    for ans in sorted(answer):
+        print ans[0],
     # Get and evaluate user queries from stdin. Terms on each line should be
     # ANDed, while results between lines should be ORed.
     # The output should be a space-separated list of document IDs. In the case
